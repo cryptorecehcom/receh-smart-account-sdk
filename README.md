@@ -22,4 +22,4 @@
 ## 📦 Instalasi
 
 ```bash
-npm install @cryptoreceh/smart-account-sdk ethers
+npm install github:cryptorecehcom/receh-smart-account-sdk
