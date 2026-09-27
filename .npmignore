@@ -1,0 +1,11 @@
+src/
+examples/
+.github/
+.vscode/
+.idea/
+tsconfig.json
+tsup.config.ts
+.gitignore
+*.log
+*.tgz
+coverage/

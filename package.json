@@ -1,0 +1,61 @@
+{
+  "name": "@receh/smart-account-sdk",
+  "version": "1.0.0",
+  "description": "SDK TypeScript untuk integrasi RECEH Smart Account di Riche Chain. Gas fee pakai RECEH, tanpa private key baru, berbasis EIP-4337 (Account Abstraction).",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "receh",
+    "smart-account",
+    "erc-4337",
+    "account-abstraction",
+    "riche-chain",
+    "web3",
+    "ethers",
+    "paymaster",
+    "bundler",
+    "smart-contract-wallet"
+  ],
+  "author": "RECEH Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cryptorecehcom/receh-smart-account-sdk.git"
+  },
+  "homepage": "https://receh.web.id",
+  "bugs": {
+    "url": "https://github.com/cryptorecehcom/receh-smart-account-sdk/issues"
+  },
+  "dependencies": {
+    "ethers": "^6.13.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

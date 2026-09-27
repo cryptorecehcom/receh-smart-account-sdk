@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RECEH Smart Account SDK — Contoh</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0e17;
+      color: #e6e8eb;
+      padding: 40px 20px;
+      max-width: 640px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    h1 { font-size: 22px; margin-bottom: 8px; }
+    .sub { color: #8892a6; font-size: 14px; margin-bottom: 32px; }
+    .card {
+      background: #131826;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 4px 4px 4px 0;
+    }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #374151; cursor: not-allowed; }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #1f2937;
+      font-size: 13px;
+    }
+    .row:last-child { border-bottom: none; }
+    .label { color: #8892a6; }
+    .value {
+      font-family: monospace;
+      color: #e6e8eb;
+      max-width: 60%;
+      text-align: right;
+      word-break: break-all;
+    }
+    .log {
+      background: #0a0e17;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+    .log-line { padding: 2px 0; }
+    .ok { color: #47d5aa; }
+    .err { color: #ef4444; }
+    .info { color: #00c8ff; }
+  </style>
+</head>
+<body>
+
+  <h1>RECEH Smart Account SDK</h1>
+  <p class="sub">Contoh penggunaan SDK di vanilla JavaScript</p>
+
+  <div class="card">
+    <h2>1. Connect Wallet</h2>
+    <button id="btnConnect">Connect MetaMask</button>
+    <div class="row">
+      <span class="label">Owner (EOA)</span>
+      <span class="value" id="ownerAddr">—</span>
+    </div>
+    <div class="row">
+      <span class="label">Smart Account</span>
+      <span class="value" id="saAddr">—</span>
+    </div>
+    <div class="row">
+      <span class="label">Status</span>
+      <span class="value" id="status">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. Aksi</h2>
+    <button id="btnDeploy" disabled>Deploy Smart Account</button>
+    <button id="btnStatus" disabled>Cek Status</button>
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <!-- 
+    Di produksi, load SDK dari npm:
+    import { RecehSmartAccount } from "@receh/smart-account-sdk";
+    
+    Contoh ini pakai ethers via CDN untuk demo.
+  -->
+  <script type="module">
+    import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.13.0/+esm";
+
+    // =====================================================
+    // Ganti dengan import dari npm:
+    // import { RecehSmartAccount, shortAddress } from "@receh/smart-account-sdk";
+    // =====================================================
+    
+    // Untuk demo, kita implementasi minimal
+    const RECEH_CONTRACTS = {
+      ENTRY_POINT: "0xf3E22FB1cd8cB9a40bFC8B20fDD85d74514E48c0",
+      ACCOUNT_FACTORY: "0xDB0bfD7221bf3F6036C7ec9e9277B75E40D46BC9",
+      PAYMASTER: "0x444C0c970E1bDB13549C944663A4e11ad38D4E5C",
+      RECEH_TOKEN: "0x4c9C431Fa7fD104c0E7230d20E1623E62019A1C5",
+    };
+
+    const FACTORY_ABI = [
+      "function getAccountAddress(address owner, uint256 salt) view returns (address)",
+      "function createAccount(address owner, uint256 salt) returns (address)",
+    ];
+
+    const ACCOUNT_ABI = [
+      "function nonce() view returns (uint256)",
+    ];
+
+    let owner = null;
+    let provider = null;
+    let readProvider = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function short(a) {
+      if (!a) return "—";
+      return a.slice(0, 6) + "…" + a.slice(-4);
+    }
+
+    function log(msg, type = "info") {
+      const el = $("log");
+      const line = document.createElement("div");
+      line.className = "log-line " + type;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      el.appendChild(line);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function connect() {
+      if (!window.ethereum) {
+        log("MetaMask tidak ditemukan", "err");
+        return;
+      }
+
+      try {
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        owner = accounts[0];
+        provider = new ethers.BrowserProvider(window.ethereum);
+        readProvider = new ethers.JsonRpcProvider("https://seed-richechain.com/");
+
+        log("Connected: " + owner, "ok");
+        $("ownerAddr").textContent = short(owner);
+
+        // Hitung Smart Account address
+        const factory = new ethers.Contract(
+          RECEH_CONTRACTS.ACCOUNT_FACTORY,
+          FACTORY_ABI,
+          readProvider,
+        );
+        const saAddr = await factory.getAccountAddress(owner, 1n);
+        $("saAddr").textContent = short(saAddr);
+        log("Smart Account: " + saAddr, "ok");
+
+        // Cek deploy
+        const code = await readProvider.getCode(saAddr);
+        const deployed = code !== "0x";
+        $("status").textContent = deployed ? "✅ Deployed" : "⚠️ Belum Deploy";
+        log("Status: " + (deployed ? "deployed" : "belum deploy"), deployed ? "ok" : "info");
+
+        $("btnDeploy").disabled = deployed;
+        $("btnStatus").disabled = false;
+      } catch (e) {
+        log("Connect error: " + (e?.message || e), "err");
+      }
+    }
+
+    async function deploy() {
+      if (!owner || !provider) return;
+      try {
+        const signer = await provider.getSigner();
+        const factory = new ethers.Contract(
+          RECEH_CONTRACTS.ACCOUNT_FACTORY,
+          FACTORY_ABI,
+          signer,
+        );
+        log("Deploying...");
+        const tx = await factory.createAccount(owner, 1n);
+        log("Tx: " + tx.hash, "info");
+        await tx.wait();
+        log("✅ Deployed", "ok");
+        $("status").textContent = "✅ Deployed";
+        $("btnDeploy").disabled = true;
+      } catch (e) {
+        log("Deploy error: " + (e?.message || e), "err");
+      }
+    }
+
+    async function checkStatus() {
+      if (!owner) return;
+      try {
+        const factory = new ethers.Contract(
+          RECEH_CONTRACTS.ACCOUNT_FACTORY,
+          FACTORY_ABI,
+          readProvider,
+        );
+        const saAddr = await factory.getAccountAddress(owner, 1n);
+        const code = await readProvider.getCode(saAddr);
+        const deployed = code !== "0x";
+        $("status").textContent = deployed ? "✅ Deployed" : "⚠️ Belum Deploy";
+        log("Status: " + (deployed ? "deployed" : "belum deploy"), "ok");
+      } catch (e) {
+        log("Check error: " + (e?.message || e), "err");
+      }
+    }
+
+    $("btnConnect").addEventListener("click", connect);
+    $("btnDeploy").addEventListener("click", deploy);
+    $("btnStatus").addEventListener("click", checkStatus);
+
+    log("SDK demo loaded. Connect wallet untuk memulai.");
+  </script>
+</body>
+</html>
