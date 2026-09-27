@@ -1,5 +1,5 @@
 {
-  "name": "@receh/smart-account-sdk",
+  "name": "@cryptoreceh/smart-account-sdk",
   "version": "1.0.0",
   "description": "SDK TypeScript untuk integrasi RECEH Smart Account di Riche Chain. Gas fee pakai RECEH, tanpa private key baru, berbasis EIP-4337 (Account Abstraction).",
   "main": "./dist/index.js",
